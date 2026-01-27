@@ -1,0 +1,20 @@
+{
+  "id": "8c3fa06d-db28-4a0e-98b7-37d686b79389",
+  "name": "sknightasia",
+  "publisher": "sknightasia",
+  "version": "1.0.0.0",
+  "dependencies": [],
+  "platform": "27.0.0.0",
+  "application": "27.0.0.0",
+  "runtime": "16.0",
+  "target": "Cloud",
+  "idRanges": [
+    { "from": 50100, "to": 53999 }
+  ],
+  "resourceExposurePolicy": {
+    "allowDebugging": true,
+    "allowDownloadingSource": true,
+    "includeSourceInSymbolFile": true
+  },
+  "features": [ "NoImplicitWith" ]
+}

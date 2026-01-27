@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "AL: Publish & Debug (Development Sandbox)",
+      "type": "al",
+      "request": "launch",
+      "server": "https://api.businesscentral.dynamics.com",
+      "tenant": "959080ae-4270-4cb7-8817-d84d8c04dd99",
+      "environmentType": "Sandbox",
+      "environmentName": "Development",
+      "startupCompany": "Sample",
+      "authentication": "AAD",
+      "startupObjectType": "Page",
+      "startupObjectId": 22,
+      "breakOnError": true,
+      "launchBrowser": true
+    }
+  ]
+}
