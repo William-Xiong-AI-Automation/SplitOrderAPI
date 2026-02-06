@@ -30,6 +30,7 @@ page 52102 "Price Calc API"
                 field(lineDiscountPct; Rec."Line Discount %") { Editable = false; }
                 field(lineAmount; Rec."Line Amount") { Editable = false; }
                 field(amountIncludingVAT; Rec."Amount Including VAT") { Editable = false; }
+                field(CreatedAt; Rec."Created At") { Editable = false; }
             }
         }
     }
