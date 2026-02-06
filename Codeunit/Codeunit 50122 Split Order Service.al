@@ -98,6 +98,8 @@ codeunit 50123 "Split Sales Order Service"
         Hdr.Status := 'ACCEPTED';
         Hdr."Error Message" := '';
         Hdr.Modify(true);
+        //拆分
+        //TryProcessOne(RequestId);
     end;
 
     procedure ProcessPendingRequests(MaxRequests: Integer)
