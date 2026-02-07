@@ -54,6 +54,7 @@ page 50120 "Split Order Req Hdr API"
     begin
         // Rec 是当前 bound 的那条记录（由 URL 的 {id} 定位）
         Svc.SubmitRequest(Rec.Id);
+        Rec.Get(Rec.Id);
 
         // 返回 200 + 当前实体（可让调用方立即看到最新 status）
         ActionContext.SetObjectType(ObjectType::Page);

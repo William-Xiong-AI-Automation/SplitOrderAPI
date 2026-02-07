@@ -52,8 +52,6 @@ codeunit 50123 "Split Sales Order Service"
     begin
         if System.IsNullGuid(Line."Request Id") then
             Error('requestId is required');
-        if Line."Line No." = 0 then
-            Error('lineNo is required');
         if Line.SKU = '' then
             Error('sku is required');
         if Line.Qty <= 0 then
@@ -99,7 +97,7 @@ codeunit 50123 "Split Sales Order Service"
         Hdr."Error Message" := '';
         Hdr.Modify(true);
         //拆分
-        //TryProcessOne(RequestId);
+        TryProcessOne(RequestId);
     end;
 
     procedure ProcessPendingRequests(MaxRequests: Integer)
@@ -130,8 +128,13 @@ codeunit 50123 "Split Sales Order Service"
         StockHeader: Record "Sales Header";
         PreHeader: Record "Sales Header";
 
-        onHand: Decimal;
-        toStock: Boolean;
+        onHandTotal: Decimal;
+        remainingOnHand: Decimal;
+        stockQty: Decimal;
+        preQty: Decimal;
+
+        RemainingBySku: Dictionary of [Text, Decimal];
+        skuKey: Text;
     begin
         // 重新 GET + Lock，防并发
         if not Hdr.Get(RequestId) then
@@ -161,25 +164,62 @@ codeunit 50123 "Split Sales Order Service"
         DeleteSalesLines(StockHeader);
         DeleteSalesLines(PreHeader);
 
+
         Line.Reset();
         Line.SetRange("Request Id", Hdr.Id);
         if Line.FindSet(true) then
             repeat
-                onHand := CalcOnHandByLocation(Line.SKU, Hdr."Location Code");
-                toStock := (onHand >= Line.Qty);
+                skuKey := Format(Line.SKU);
 
-                Line."OnHand At Check" := onHand;
-                if toStock then
-                    Line."Assigned To" := 'STOCK'
+                // 取该 SKU 的 remainingOnHand（第一次才真正去算库存）
+                if not RemainingBySku.Get(skuKey, remainingOnHand) then begin
+                    onHandTotal := CalcOnHandByLocation(Line.SKU, Hdr."Location Code");
+                    if onHandTotal < 0 then
+                        onHandTotal := 0;
+
+                    remainingOnHand := onHandTotal;
+                    RemainingBySku.Add(skuKey, remainingOnHand);
+                end;
+
+                // 记录本行检查时“可用剩余库存”（更符合你拆分逻辑）
+                Line."OnHand At Check" := remainingOnHand;
+
+                // 核心：本行拆分
+                stockQty := remainingOnHand;
+                if stockQty > Line.Qty then
+                    stockQty := Line.Qty;
+
+                if stockQty < 0 then
+                    stockQty := 0;
+
+                preQty := Line.Qty - stockQty;
+                if preQty < 0 then
+                    preQty := 0;
+
+                // 写回分配结果（你也可以用更细的字段记录 stockQty/preQty，如果你表里有）
+                if (stockQty > 0) and (preQty > 0) then
+                    Line."Assigned To" := 'SPLIT'
                 else
-                    Line."Assigned To" := 'PREORDER';
+                    if stockQty > 0 then
+                        Line."Assigned To" := 'STOCK'
+                    else
+                        Line."Assigned To" := 'PREORDER';
 
                 Line.Modify(true);
 
-                if toStock then
-                    AddSalesLine(StockHeader, Hdr."Location Code", Line.SKU, Line.Qty)
-                else
-                    AddSalesLine(PreHeader, Hdr."Location Code", Line.SKU, Line.Qty);
+                // 分别写入两张 SO
+                if stockQty > 0 then
+                    AddSalesLine(StockHeader, Hdr."Location Code", Line.SKU, stockQty);
+
+                if preQty > 0 then
+                    AddSalesLine(PreHeader, Hdr."Location Code", Line.SKU, preQty);
+
+                // 扣减 remainingOnHand，避免同 SKU 多行重复吃库存
+                remainingOnHand := remainingOnHand - stockQty;
+                if remainingOnHand < 0 then
+                    remainingOnHand := 0;
+
+                RemainingBySku.Set(skuKey, remainingOnHand);
 
                 Hdr."Processed Line Count" += 1;
                 Hdr.Modify(true);

@@ -4,7 +4,7 @@ page 52102 "Price Calc API"
 {
     PageType = API;
     SourceTable = "Price Calc Request";
-    APIPublisher = 'luminys';
+    APIPublisher = 'gauss';
     APIGroup = 'pricing';
     APIVersion = 'v1.0';
     EntityName = 'priceCalc';
